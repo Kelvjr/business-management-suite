@@ -2,12 +2,19 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Bell, ChevronDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 
 function getPageMeta(pathname: string) {
+  if (pathname.startsWith("/sales/add")) {
+    return {
+      title: "Record a Sale",
+      description: "Capture item details and save transactions quickly",
+    };
+  }
+
   if (pathname === "/") {
     return {
       title: "Dashboard",
@@ -36,10 +43,24 @@ function getPageMeta(pathname: string) {
     };
   }
 
+  if (pathname.startsWith("/notifications")) {
+    return {
+      title: "Notifications",
+      description: "Track business alerts and growth opportunities",
+    };
+  }
+
   if (pathname.startsWith("/settings")) {
     return {
       title: "Settings",
       description: "Manage business and account preferences",
+    };
+  }
+
+  if (pathname.startsWith("/help")) {
+    return {
+      title: "Help & Support",
+      description: "Get assistance, guides, and troubleshooting resources",
     };
   }
 
@@ -50,30 +71,73 @@ function getPageMeta(pathname: string) {
 }
 
 function TopbarContent() {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { title, description } = getPageMeta(pathname);
-
-  const params = new URLSearchParams(searchParams.toString());
-  params.set("sale", "new");
-  const quickAddHref = `${pathname}?${params.toString()}`;
+  const currentSearch = searchParams.get("search") || "";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-gradient-to-r from-primary/5 via-background to-accent/5 px-4 lg:px-6">
-      <div className="flex items-center gap-3">
-        <MobileSidebar />
-
-        <div>
-          <h1 className="text-lg font-semibold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
+    <header className="sticky top-0 z-30 h-14 border-b border-stone-300 bg-white">
+      <div className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-between px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <MobileSidebar />
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-medium text-black">{title}</h1>
+            <p className="truncate text-xs font-medium text-neutral-400">
+              {description}
+            </p>
+          </div>
+          <form
+            className="ml-4 hidden md:block"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const term = String(formData.get("search") || "").trim();
+              const query = new URLSearchParams();
+              if (term) query.set("search", term);
+              router.push(`/sales${query.toString() ? `?${query.toString()}` : ""}`);
+            }}
+          >
+            <div className="relative w-52">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-3 -translate-y-1/2 text-neutral-400" />
+              <Input
+                name="search"
+                defaultValue={currentSearch}
+                placeholder="Search transactions..."
+                className="h-7 rounded-[20px] border-0 bg-zinc-100 pl-8 text-[10px] font-medium text-neutral-500 shadow-none placeholder:text-[10px] placeholder:font-medium placeholder:text-neutral-400 focus-visible:ring-1"
+              />
+            </div>
+          </form>
         </div>
-      </div>
 
-      <div className="flex items-center gap-3">
-        <Input placeholder="Search..." className="hidden w-64 md:flex" />
-        <Button asChild variant="outline" className="hidden border-primary/30 text-primary hover:bg-primary/10 sm:inline-flex">
-          <Link href={quickAddHref}>Quick Add</Link>
-        </Button>
+        <div className="hidden items-center gap-3 md:flex">
+          <Link
+            href="/notifications"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100"
+            aria-label="Notifications"
+          >
+            <Bell className="size-4 text-indigo-500" />
+          </Link>
+
+          <button
+            type="button"
+            className="flex items-center gap-2 px-1 py-0.5"
+          >
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-300 text-xs font-semibold text-zinc-700">
+              K
+            </span>
+            <span className="text-left leading-tight">
+              <span className="block text-xs font-semibold text-black">
+                Kelvin Kyere
+              </span>
+              <span className="block text-[10px] font-semibold text-neutral-400">
+                Owner
+              </span>
+            </span>
+            <ChevronDown className="ml-1 size-3.5 text-neutral-500" />
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -81,12 +145,11 @@ function TopbarContent() {
 
 function TopbarFallback() {
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-background px-4 lg:px-6">
-      <div className="flex items-center gap-3">
+    <header className="h-14 border-b border-stone-300 bg-white">
+      <div className="mx-auto flex h-full w-full max-w-[1200px] items-center justify-between px-4">
         <MobileSidebar />
-        <div className="h-10 w-40 animate-pulse rounded-md bg-muted" />
+        <div className="h-8 w-44 animate-pulse rounded-md bg-muted" />
       </div>
-      <div className="hidden h-9 w-28 animate-pulse rounded-md bg-muted sm:block" />
     </header>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateSale, type Sale } from "@/lib/api";
@@ -24,6 +24,7 @@ import {
 
 type EditSaleSheetProps = {
   sale: Sale;
+  trigger?: ReactNode;
 };
 
 function toDatetimeLocal(value: string) {
@@ -33,7 +34,7 @@ function toDatetimeLocal(value: string) {
   return local.toISOString().slice(0, 16);
 }
 
-export function EditSaleSheet({ sale }: EditSaleSheetProps) {
+export function EditSaleSheet({ sale, trigger }: EditSaleSheetProps) {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -131,7 +132,7 @@ export function EditSaleSheet({ sale }: EditSaleSheetProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <button className="w-full text-left text-sm">Edit</button>
+        {trigger ?? <button className="w-full text-left text-sm">Edit</button>}
       </SheetTrigger>
 
       <SheetContent className="w-full overflow-y-auto sm:max-w-xl">

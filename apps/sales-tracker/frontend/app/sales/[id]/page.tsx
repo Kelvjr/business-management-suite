@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteSaleButton } from "@/components/sales/delete-sale-button";
 import { formatCurrency } from "@/lib/format";
+import { EditSaleSheet } from "@/components/sales/edit-sale-sheet";
 import { PaymentStatusBadge } from "@/components/sales/payment-status-badge";
 import { fetchSaleById } from "@/lib/api";
 
@@ -22,7 +24,7 @@ export default async function SaleDetailsPage({
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
               Sale Details
@@ -32,9 +34,27 @@ export default async function SaleDetailsPage({
             </p>
           </div>
 
-          <Button asChild variant="outline">
-            <Link href="/sales">Back to Sales</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <EditSaleSheet
+              sale={sale}
+              trigger={
+                <Button type="button" variant="default">
+                  Edit Sale
+                </Button>
+              }
+            />
+            <DeleteSaleButton
+              id={sale.id}
+              trigger={
+                <Button type="button" variant="destructive">
+                  Delete
+                </Button>
+              }
+            />
+            <Button asChild variant="outline">
+              <Link href="/sales">Back to Sales</Link>
+            </Button>
+          </div>
         </div>
 
         <Card className="rounded-2xl">

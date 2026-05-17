@@ -22,28 +22,34 @@ export function SalesTable({ sales }: SalesTableProps) {
         <thead>
           <tr className="border-b text-left text-muted-foreground">
             <th className="px-3 py-3 font-medium">Item</th>
-            <th className="px-3 py-3 font-medium">Type</th>
             <th className="px-3 py-3 font-medium">Category</th>
+            <th className="px-3 py-3 font-medium">Qty</th>
+            <th className="px-3 py-3 font-medium">Price</th>
+            <th className="px-3 py-3 font-medium">Total</th>
             <th className="px-3 py-3 font-medium">Customer</th>
             <th className="px-3 py-3 font-medium">Status</th>
-            <th className="px-3 py-3 font-medium">Amount</th>
+            <th className="px-3 py-3 font-medium">Channel</th>
             <th className="px-3 py-3 font-medium">Date</th>
             <th className="px-3 py-3 font-medium text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {sales.map((sale) => (
-            <tr key={sale.id} className="border-b last:border-0">
+            <tr key={sale.id} className="border-b transition hover:bg-muted/50 last:border-0">
               <td className="px-3 py-3 font-medium">{sale.itemName}</td>
-              <td className="px-3 py-3 capitalize">{sale.itemType}</td>
               <td className="px-3 py-3">{sale.category || "—"}</td>
-              <td className="px-3 py-3">{sale.customerName || "Walk-in"}</td>
+              <td className="px-3 py-3">{sale.quantity ?? 1}</td>
               <td className="px-3 py-3">
-                <PaymentStatusBadge status={sale.paymentStatus} />
+                {formatCurrency(Number(sale.unitPrice ?? sale.totalAmount))}
               </td>
               <td className="px-3 py-3 font-medium">
                 {formatCurrency(Number(sale.totalAmount))}
               </td>
+              <td className="px-3 py-3">{sale.customerName || "Walk-in"}</td>
+              <td className="px-3 py-3">
+                <PaymentStatusBadge status={sale.paymentStatus} />
+              </td>
+              <td className="px-3 py-3 capitalize">{sale.salesChannel || "—"}</td>
               <td className="px-3 py-3">{formatSaleDate(sale.soldAt)}</td>
               <td className="px-3 py-3 text-right">
                 <SaleRowActions sale={sale} />

@@ -74,6 +74,7 @@ function NewSaleSheetInner({ trigger, hideTrigger }: NewSaleSheetProps) {
   const [subcategory, setSubcategory] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
+  const [costPrice, setCostPrice] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("paid");
   const [salesChannel, setSalesChannel] = useState<SaleChannel>("walk-in");
   const [customerName, setCustomerName] = useState("");
@@ -120,6 +121,12 @@ function NewSaleSheetInner({ trigger, hideTrigger }: NewSaleSheetProps) {
     const price = Number(unitPrice || 0);
     return qty * price;
   }, [quantity, unitPrice]);
+
+  const estimatedProfit = useMemo(() => {
+    const qty = Number(quantity || 0);
+    const cost = Number(costPrice || 0);
+    return totalAmount - qty * cost;
+  }, [costPrice, quantity, totalAmount]);
 
   const suggestions = useMemo<Suggestion[]>(() => {
     const query = normalizeText(itemName);
@@ -210,6 +217,7 @@ function NewSaleSheetInner({ trigger, hideTrigger }: NewSaleSheetProps) {
     setSubcategory("");
     setQuantity("1");
     setUnitPrice("");
+    setCostPrice("");
     setPaymentStatus("paid");
     setSalesChannel("walk-in");
     setCustomerName("");
@@ -527,9 +535,29 @@ function NewSaleSheetInner({ trigger, hideTrigger }: NewSaleSheetProps) {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Cost Price <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={costPrice}
+              onChange={(e) => setCostPrice(e.target.value)}
+              placeholder="0.00"
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium">Total Amount</label>
             <Input value={String(totalAmount || 0)} readOnly />
           </div>
+          {costPrice ? (
+            <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+              <p className="font-medium">Estimated Profit</p>
+              <p className="text-muted-foreground">{formatCurrency(estimatedProfit)}</p>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

@@ -1,0 +1,12 @@
+{
+  "name": "@renaissance/billing",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@renaissance/shared-types": "0.1.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -7,6 +7,8 @@ type SalesPageProps = {
     category?: string;
     paymentStatus?: string;
     search?: string;
+    startDate?: string;
+    endDate?: string;
   }>;
 };
 
@@ -17,6 +19,8 @@ export default async function SalesPage({ searchParams }: SalesPageProps) {
     category: params.category,
     paymentStatus: params.paymentStatus,
     search: params.search,
+    startDate: params.startDate,
+    endDate: params.endDate,
   });
 
   return (

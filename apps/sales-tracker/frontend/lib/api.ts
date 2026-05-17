@@ -51,6 +51,40 @@ export type CreateSalePayload = {
 
 export type UpdateSalePayload = Partial<CreateSalePayload>;
 
+export type Category = {
+  id: string;
+  name: string;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateCategoryPayload = {
+  name: string;
+  description?: string;
+};
+
+export type Customer = {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  businessName?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateCustomerPayload = {
+  name: string;
+  email?: string;
+  phone?: string;
+  businessName?: string;
+  notes?: string;
+};
+
+export type UpdateCustomerPayload = Partial<CreateCustomerPayload>;
+
 export async function fetchSalesSummary() {
   const res = await fetch(`${API_URL}/sales/summary`, {
     cache: "no-store",
@@ -160,6 +194,94 @@ export async function deleteSale(id: string) {
       message = errorData?.error || message;
     } catch {}
 
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch(`${API_URL}/categories`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch categories");
+  return res.json();
+}
+
+export async function createCategory(payload: CreateCategoryPayload) {
+  const res = await fetch(`${API_URL}/categories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let message = "Failed to create category";
+    try {
+      const errorData = await res.json();
+      message = errorData?.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
+export async function updateCategory(id: string, payload: Partial<CreateCategoryPayload>) {
+  const res = await fetch(`${API_URL}/categories/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let message = "Failed to update category";
+    try {
+      const errorData = await res.json();
+      message = errorData?.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
+export async function fetchCustomers(): Promise<Customer[]> {
+  const res = await fetch(`${API_URL}/customers`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch customers");
+  return res.json();
+}
+
+export async function createCustomer(payload: CreateCustomerPayload) {
+  const res = await fetch(`${API_URL}/customers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let message = "Failed to create customer";
+    try {
+      const errorData = await res.json();
+      message = errorData?.error || message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
+export async function updateCustomer(id: string, payload: UpdateCustomerPayload) {
+  const res = await fetch(`${API_URL}/customers/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let message = "Failed to update customer";
+    try {
+      const errorData = await res.json();
+      message = errorData?.error || message;
+    } catch {}
     throw new Error(message);
   }
 

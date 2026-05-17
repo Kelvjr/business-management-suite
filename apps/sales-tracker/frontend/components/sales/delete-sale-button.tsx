@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { deleteSale } from "@/lib/api";
@@ -18,9 +18,10 @@ import {
 
 type DeleteSaleButtonProps = {
   id: string;
+  trigger?: ReactNode;
 };
 
-export function DeleteSaleButton({ id }: DeleteSaleButtonProps) {
+export function DeleteSaleButton({ id, trigger }: DeleteSaleButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
@@ -42,9 +43,7 @@ export function DeleteSaleButton({ id }: DeleteSaleButtonProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <button className="w-full text-left text-sm text-red-600">
-          Delete
-        </button>
+        {trigger ?? <button className="w-full text-left text-sm text-red-600">Delete</button>}
       </AlertDialogTrigger>
 
       <AlertDialogContent>

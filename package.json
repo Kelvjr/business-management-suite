@@ -1,0 +1,26 @@
+{
+  "name": "renaissance-product",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Modular SaaS ecosystem monorepo for standalone SME products and the combined BusinessOS suite.",
+  "workspaces": [
+    "apps/sales-tracker/frontend",
+    "apps/sales-tracker/backend",
+    "apps/sales",
+    "apps/expenses",
+    "apps/invoices",
+    "apps/crm-lite",
+    "apps/reports",
+    "apps/business-os",
+    "packages/*",
+    "backend"
+  ],
+  "scripts": {
+    "sales-tracker:frontend:dev": "npm --prefix apps/sales-tracker/frontend run dev",
+    "sales-tracker:frontend:build": "npm --prefix apps/sales-tracker/frontend run build",
+    "sales-tracker:frontend:lint": "npm --prefix apps/sales-tracker/frontend run lint",
+    "sales-tracker:backend:dev": "npm --prefix apps/sales-tracker/backend run dev",
+    "sales-tracker:backend:build": "npm --prefix apps/sales-tracker/backend run build",
+    "sales-tracker:backend:prisma:generate": "npm --prefix apps/sales-tracker/backend run prisma:generate"
+  }
+}

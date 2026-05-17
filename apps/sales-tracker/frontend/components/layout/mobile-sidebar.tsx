@@ -25,8 +25,13 @@ export function MobileSidebar() {
         </SheetTrigger>
 
         <SheetContent side="left" className="w-72 p-0">
-          <SheetHeader className="border-b px-6 py-4 text-left">
-            <SheetTitle>Sales Tracker</SheetTitle>
+          <SheetHeader className="border-b bg-gradient-to-r from-primary/10 to-accent/10 px-6 py-4 text-left">
+            <SheetTitle className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent text-xs font-bold text-white">
+                ST
+              </span>
+              <span>SaleTrack</span>
+            </SheetTitle>
           </SheetHeader>
 
           <SidebarNav onNavigate={() => setOpen(false)} />
