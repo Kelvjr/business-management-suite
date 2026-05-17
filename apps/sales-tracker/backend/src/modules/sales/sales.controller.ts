@@ -6,11 +6,11 @@ import {
   getSaleById,
   getSalesSummary,
   updateSale,
-} from "../services/sales.service";
+} from "./sales.service";
 import {
   createSaleSchema,
   updateSaleSchema,
-} from "../validators/sales.validator";
+} from "./sales.validator";
 
 type SaleParams = {
   id: string;

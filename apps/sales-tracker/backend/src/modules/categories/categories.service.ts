@@ -1,11 +1,13 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { DEFAULT_BUSINESS_ID } from "../../core/context";
 import {
   CreateCategorySchemaType,
   UpdateCategorySchemaType,
-} from "../validators/categories.validator";
+} from "./categories.validator";
 
 export async function getAllCategories() {
   return prisma.category.findMany({
+    where: { businessId: DEFAULT_BUSINESS_ID },
     orderBy: { name: "asc" },
   });
 }
@@ -13,6 +15,7 @@ export async function getAllCategories() {
 export async function createCategory(data: CreateCategorySchemaType) {
   return prisma.category.create({
     data: {
+      businessId: DEFAULT_BUSINESS_ID,
       name: data.name,
       description: data.description || null,
     },

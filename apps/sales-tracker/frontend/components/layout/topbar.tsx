@@ -29,6 +29,27 @@ function getPageMeta(pathname: string) {
     };
   }
 
+  if (pathname.startsWith("/expenses")) {
+    return {
+      title: "Expenses",
+      description: "Track costs and recurring spend",
+    };
+  }
+
+  if (pathname.startsWith("/profit")) {
+    return {
+      title: "Profit",
+      description: "Monitor revenue, expenses, and margin",
+    };
+  }
+
+  if (pathname.startsWith("/invoices")) {
+    return {
+      title: "Invoices & Receipts",
+      description: "Manage billing documents and confirmations",
+    };
+  }
+
   if (pathname.startsWith("/customers")) {
     return {
       title: "Customers",

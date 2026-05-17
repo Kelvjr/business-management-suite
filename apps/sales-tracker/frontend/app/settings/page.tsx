@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
@@ -117,35 +117,35 @@ const DEFAULT_SETTINGS: SettingsState = {
   lastUpdatedAt: null,
 };
 
+function loadSavedSettings(): SettingsState {
+  if (typeof window === "undefined") return DEFAULT_SETTINGS;
+
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(raw) as SettingsState;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      profile: { ...DEFAULT_SETTINGS.profile, ...parsed.profile },
+      appearance: { ...DEFAULT_SETTINGS.appearance, ...parsed.appearance },
+      notifications: {
+        ...DEFAULT_SETTINGS.notifications,
+        ...parsed.notifications,
+      },
+      dataExport: { ...DEFAULT_SETTINGS.dataExport, ...parsed.dataExport },
+      security: { ...DEFAULT_SETTINGS.security, ...parsed.security },
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+}
+
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("profile");
-  const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<SettingsState>(loadSavedSettings);
   const [lastSavedSettings, setLastSavedSettings] =
-    useState<SettingsState>(DEFAULT_SETTINGS);
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as SettingsState;
-      const merged = {
-        ...DEFAULT_SETTINGS,
-        ...parsed,
-        profile: { ...DEFAULT_SETTINGS.profile, ...parsed.profile },
-        appearance: { ...DEFAULT_SETTINGS.appearance, ...parsed.appearance },
-        notifications: {
-          ...DEFAULT_SETTINGS.notifications,
-          ...parsed.notifications,
-        },
-        dataExport: { ...DEFAULT_SETTINGS.dataExport, ...parsed.dataExport },
-        security: { ...DEFAULT_SETTINGS.security, ...parsed.security },
-      };
-      setSettings(merged);
-      setLastSavedSettings(merged);
-    } catch {
-      toast.error("Could not read saved settings.");
-    }
-  }, []);
+    useState<SettingsState>(settings);
 
   const saveActionLabel = useMemo(() => {
     return {

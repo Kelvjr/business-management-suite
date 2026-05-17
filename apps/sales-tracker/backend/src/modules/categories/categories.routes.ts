@@ -3,7 +3,7 @@ import {
   addCategory,
   editCategory,
   fetchCategories,
-} from "../controllers/categories.controller";
+} from "./categories.controller";
 
 const router = Router();
 

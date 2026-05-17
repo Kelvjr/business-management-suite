@@ -61,10 +61,15 @@ export function ChartContainer({
     <ChartContext.Provider value={{ config }}>
       <div
         data-chart={chartId}
-        className={cn("h-[260px] w-full text-xs", className)}
+        className={cn("h-[260px] min-h-0 min-w-0 w-full text-xs", className)}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
+        <RechartsPrimitive.ResponsiveContainer
+          width="100%"
+          height="100%"
+          minWidth={0}
+          initialDimension={{ width: 1, height: 1 }}
+        >
           {children}
         </RechartsPrimitive.ResponsiveContainer>
       </div>

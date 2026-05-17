@@ -6,7 +6,7 @@ import {
   fetchSales,
   fetchSalesSummary,
   removeSale,
-} from "../controllers/sales.controller";
+} from "./sales.controller";
 
 const router = Router();
 

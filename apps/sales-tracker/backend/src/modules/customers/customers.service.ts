@@ -1,18 +1,53 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { DEFAULT_BUSINESS_ID } from "../../core/context";
 import {
   CreateCustomerSchemaType,
   UpdateCustomerSchemaType,
-} from "../validators/customers.validator";
+} from "./customers.validator";
 
 export async function getAllCustomers() {
   return prisma.customer.findMany({
+    where: { businessId: DEFAULT_BUSINESS_ID },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function getCustomerById(id: string) {
+  return prisma.customer.findFirst({
+    where: { id, businessId: DEFAULT_BUSINESS_ID },
+    include: {
+      sales: {
+        orderBy: { soldAt: "desc" },
+        include: { lineItems: true },
+      },
+      invoices: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+}
+
+export async function getCustomerPurchaseSummary(id: string) {
+  const [customer, totals] = await Promise.all([
+    getCustomerById(id),
+    prisma.sale.aggregate({
+      where: { customerId: id, businessId: DEFAULT_BUSINESS_ID },
+      _sum: { totalAmount: true },
+      _count: true,
+    }),
+  ]);
+
+  return {
+    customer,
+    totalSpend: Number(totals._sum.totalAmount ?? 0),
+    purchaseCount: totals._count,
+  };
 }
 
 export async function createCustomer(data: CreateCustomerSchemaType) {
   return prisma.customer.create({
     data: {
+      businessId: DEFAULT_BUSINESS_ID,
       name: data.name,
       email: data.email || null,
       phone: data.phone || null,

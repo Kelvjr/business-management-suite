@@ -3,11 +3,11 @@ import {
   createCategory,
   getAllCategories,
   updateCategory,
-} from "../services/categories.service";
+} from "./categories.service";
 import {
   createCategorySchema,
   updateCategorySchema,
-} from "../validators/categories.validator";
+} from "./categories.validator";
 
 type CategoryParams = {
   id: string;

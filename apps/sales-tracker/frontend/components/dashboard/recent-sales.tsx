@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { formatCurrency, formatSaleDate } from "@/lib/format";
 import type { Sale } from "@/lib/api";
@@ -72,10 +72,6 @@ export function RecentSales({ sales, pageSize = 7, tableMaxHeightClass }: Recent
   const totalTransactions = filteredSales.length;
   const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
 
-  useEffect(() => {
-    setPage(1);
-  }, [search, category, status, range]);
-
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalTransactions);
@@ -97,13 +93,22 @@ export function RecentSales({ sales, pageSize = 7, tableMaxHeightClass }: Recent
             <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
             <Input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search sales by item or customer..."
               className="h-8 w-full rounded-lg border-black/10 pl-8 text-xs"
             />
           </div>
 
-          <Select value={category} onValueChange={setCategory}>
+          <Select
+            value={category}
+            onValueChange={(value) => {
+              setCategory(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger size="sm" className="h-8 rounded-lg border-black/10 text-xs">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -119,7 +124,13 @@ export function RecentSales({ sales, pageSize = 7, tableMaxHeightClass }: Recent
             </SelectContent>
           </Select>
 
-          <Select value={status} onValueChange={setStatus}>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger size="sm" className="h-8 rounded-lg border-black/10 text-xs">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -139,7 +150,13 @@ export function RecentSales({ sales, pageSize = 7, tableMaxHeightClass }: Recent
             </SelectContent>
           </Select>
 
-          <Select value={range} onValueChange={setRange}>
+          <Select
+            value={range}
+            onValueChange={(value) => {
+              setRange(value);
+              setPage(1);
+            }}
+          >
             <SelectTrigger size="sm" className="h-8 rounded-lg border-black/10 text-xs">
               <SelectValue />
             </SelectTrigger>

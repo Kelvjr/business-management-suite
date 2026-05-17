@@ -2,12 +2,14 @@ import { Request, Response } from "express";
 import {
   createCustomer,
   getAllCustomers,
+  getCustomerById,
+  getCustomerPurchaseSummary,
   updateCustomer,
-} from "../services/customers.service";
+} from "./customers.service";
 import {
   createCustomerSchema,
   updateCustomerSchema,
-} from "../validators/customers.validator";
+} from "./customers.validator";
 
 type CustomerParams = {
   id: string;
@@ -20,6 +22,35 @@ export async function fetchCustomers(_req: Request, res: Response) {
   } catch (error) {
     console.error("Error fetching customers:", error);
     res.status(500).json({ error: "Failed to fetch customers" });
+  }
+}
+
+export async function fetchCustomerById(req: Request<CustomerParams>, res: Response) {
+  try {
+    const customer = await getCustomerById(req.params.id);
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    res.json(customer);
+  } catch (error) {
+    console.error("Error fetching customer:", error);
+    res.status(500).json({ error: "Failed to fetch customer" });
+  }
+}
+
+export async function fetchCustomerPurchaseHistory(
+  req: Request<CustomerParams>,
+  res: Response,
+) {
+  try {
+    const summary = await getCustomerPurchaseSummary(req.params.id);
+    if (!summary.customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+    res.json(summary);
+  } catch (error) {
+    console.error("Error fetching customer purchase history:", error);
+    res.status(500).json({ error: "Failed to fetch customer purchase history" });
   }
 }
 

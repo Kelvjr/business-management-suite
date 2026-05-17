@@ -5,10 +5,13 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Bell,
+  Calculator,
   HelpCircle,
+  Landmark,
   LayoutDashboard,
   Receipt,
   Settings,
+  WalletCards,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +20,9 @@ import { useSidebar } from "@/components/layout/sidebar-context";
 const menuItems = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Sales", href: "/sales", icon: Receipt },
+  { name: "Expenses", href: "/expenses", icon: WalletCards },
+  { name: "Profit", href: "/profit", icon: Calculator },
+  { name: "Invoices", href: "/invoices", icon: Landmark },
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Notifications", href: "/notifications", icon: Bell },
