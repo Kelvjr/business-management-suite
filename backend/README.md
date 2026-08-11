@@ -1,24 +1,5 @@
-# Backend
+# Renaissance Sales API
 
-Target home for the shared modular monolith backend.
+Express + PostgreSQL + Prisma API for the sales module. Copy `.env.example` to `.env`, set `DATABASE_URL`, then run `npm install`, `npm run prisma:deploy`, `npm run db:seed`, and `npm run dev`.
 
-The current backend remains in `apps/sales-tracker/backend` until the Phase 1 relocation. After relocation, the backend should expose one Express API backed by one Prisma schema and one PostgreSQL database.
-
-Planned module structure:
-
-```text
-backend/src/modules/auth
-backend/src/modules/users
-backend/src/modules/organizations
-backend/src/modules/sales
-backend/src/modules/expenses
-backend/src/modules/invoices
-backend/src/modules/customers
-backend/src/modules/reports
-backend/src/modules/subscriptions
-backend/src/modules/notifications
-backend/src/modules/admin
-```
-
-All product modules must receive organization context and enforce role, permission, and feature gates before data access.
-
+The API runs at `http://localhost:4000` by default. Health check: `GET /health`.
