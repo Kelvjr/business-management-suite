@@ -180,10 +180,24 @@ export function CatalogPageContent() {
       const item = editing
         ? await suiteApi.updateCatalog(editing.id, payload)
         : await suiteApi.createCatalog(payload);
-      for (let index = 0; index < pendingImages.length; index += 1)
-        await storageApi.uploadProductImage(item.id, pendingImages[index], {
-          isPrimary: !editing?.images.length && index === 0,
-        });
+      if (!editing) setEditing(item);
+      for (let index = 0; index < pendingImages.length; index += 1) {
+        const file = pendingImages[index];
+        try {
+          await storageApi.uploadProductImage(item.id, file, {
+            isPrimary: !editing?.images.length && index === 0,
+          });
+          setPendingImages((current) => current.filter((entry) => entry !== file));
+        } catch (caught) {
+          const latest = await suiteApi.catalog();
+          setRows(latest);
+          setEditing(latest.find((row) => row.id === item.id) ?? item);
+          setError(
+            `The product was saved, but its image was not uploaded. ${caught instanceof Error ? caught.message : "Try the image again."}`,
+          );
+          return;
+        }
+      }
       await load();
       setOpen(false);
     } catch (caught) {

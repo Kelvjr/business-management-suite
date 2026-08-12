@@ -8,6 +8,7 @@ import { customersRouter } from "./routes/customers.js";
 import { storageRouter } from "./routes/storage.js";
 import multer from "multer";
 import { StorageValidationError } from "./storage/storage.service.js";
+import { StorageConfigurationError } from "./storage/config.js";
 import { expensesRouter } from "./routes/expenses.js";
 import { suiteRouter } from "./routes/suite.js";
 import { paymentsRouter } from "./routes/payments.js";
@@ -30,6 +31,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") return res.status(404).json({ error: "Record not found" });
   if (error instanceof ZodError) return res.status(400).json({ error: "Invalid request", details: error.issues });
   if (error instanceof StorageValidationError || error instanceof multer.MulterError || (error instanceof Error && error.message === "Choose a file to upload")) return res.status(400).json({ error: error.message });
+  if (error instanceof StorageConfigurationError) return res.status(503).json({ error: error.message });
   if (error instanceof Error && (error.message.startsWith("Payment exceeds") || error.message.startsWith("Insufficient stock") || error.message === "Recorded payments cannot be reduced" || error.message === "Recorded payments cannot be negative" || error.message === "Received purchase orders cannot be reopened")) return res.status(409).json({ error: error.message });
   console.error(error);
   res.status(500).json({ error: "Something went wrong" });

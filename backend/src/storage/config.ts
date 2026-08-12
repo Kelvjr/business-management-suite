@@ -9,9 +9,10 @@ const schema = z.object({
 });
 
 export type StorageConfig = z.infer<typeof schema>;
+export class StorageConfigurationError extends Error {}
 
 export function readStorageConfig(environment: NodeJS.ProcessEnv = process.env): StorageConfig {
   const result = schema.safeParse(environment);
-  if (!result.success) throw new Error(`Storage is not configured: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`);
+  if (!result.success) throw new StorageConfigurationError(`File storage is not ready. Add these values to backend/.env: ${result.error.issues.map((issue) => issue.path.join(".")).join(", ")}`);
   return result.data;
 }
