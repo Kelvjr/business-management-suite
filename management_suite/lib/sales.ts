@@ -64,7 +64,6 @@ export type SaleInput = {
   paymentStatus?: PaymentStatus;
   amountPaid?: number;
   customFields?: Record<string, string>;
-  attachments?: SaleAttachment[];
 };
 
 const demoRows = [

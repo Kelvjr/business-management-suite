@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { salesApi } from "@/lib/api";
 import { makeDemoSales, type Sale, type SaleInput } from "@/lib/sales";
 
+const demoFallbackEnabled = process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_ENABLE_DEMO_FALLBACK !== "false";
+
 export function useSales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
@@ -11,8 +13,7 @@ export function useSales() {
 
   useEffect(() => {
     salesApi.list().then(setSales).catch(() => {
-      setSales(makeDemoSales());
-      setDemoMode(true);
+      if (demoFallbackEnabled) { setSales(makeDemoSales()); setDemoMode(true); }
     }).finally(() => setLoading(false));
   }, []);
 

@@ -67,7 +67,7 @@ Use **Quick sale** for a name and total such as `Peppers — GH₵450`, or selec
 
 Currency is display formatting, not exchange-rate conversion. Changing it in Settings updates dashboard, sale, receipt, CSV, and PDF formatting; existing numeric amounts are not converted.
 
-Uploaded supporting files are stored in `backend/uploads` for local development. Before production deployment, move this storage to a durable private object-storage provider and add authenticated download access.
+Product images and supporting documents now use Supabase Storage. Product images are public; sale and expense files are private and opened through short-lived links. Files are checked by their actual contents, not only by the label supplied by the browser. See `docs/supabase-storage-setup.md` before using uploads.
 
 ## Expenses module
 

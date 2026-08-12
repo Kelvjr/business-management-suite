@@ -8,7 +8,7 @@ export type Expense = {
   activity?: Array<{ id: string; action: string; summary: string; createdAt: string }>;
 };
 
-export type ExpenseInput = Omit<Expense, "id" | "reference" | "balanceDue" | "activity"> & { reference?: string | null };
+export type ExpenseInput = Omit<Expense, "id" | "reference" | "balanceDue" | "activity" | "attachments"> & { reference?: string | null };
 
 export const expenseCategories = ["Inventory & supplies", "Rent & utilities", "Transport", "Marketing", "Payroll", "Equipment", "Professional services", "Taxes & fees", "Meals", "Other"];
 

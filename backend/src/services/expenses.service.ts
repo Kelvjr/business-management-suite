@@ -2,13 +2,16 @@ import { Prisma } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { prisma } from "../lib/prisma.js";
 import type { ExpenseInput, ExpenseUpdateInput } from "../validators/expense.js";
+import { paymentState } from "../domain/money.js";
+import { attachmentDto } from "../storage/dto.js";
+import { getStorage } from "../storage/index.js";
 
 const include = { attachments: true, activity: { orderBy: { createdAt: "desc" as const } } } satisfies Prisma.ExpenseInclude;
 type ExpenseRow = Prisma.ExpenseGetPayload<{ include: typeof include }>;
-const serialize = (row: ExpenseRow) => ({ ...row, amount: Number(row.amount), amountPaid: Number(row.amountPaid), balanceDue: Number(row.balanceDue) });
-const payments = (amount: number, status: ExpenseInput["paymentStatus"], paid: number) => {
-  const amountPaid = status === "PAID" ? amount : status === "UNPAID" ? 0 : Math.min(paid, amount);
-  return { amountPaid, balanceDue: Math.max(0, amount - amountPaid) };
+const serialize = (row: ExpenseRow) => ({ ...row, amount: Number(row.amount), amountPaid: Number(row.amountPaid), balanceDue: Number(row.balanceDue), attachments: row.attachments.map((attachment) => attachmentDto("expenses", row.id, attachment)) });
+export const expensePaymentState = (amount: number, status: ExpenseInput["paymentStatus"], paid: number) => {
+  const requestedPaid = status === "PAID" ? amount : status === "UNPAID" ? 0 : paid;
+  return paymentState(amount, requestedPaid);
 };
 
 export async function listExpenses(params: { search?: string; from?: Date; to?: Date }) {
@@ -22,15 +25,22 @@ export async function getExpense(id: string) { return serialize(await prisma.exp
 
 export async function createExpense(input: ExpenseInput) {
   const reference = input.reference || `EXP-${new Date().getFullYear()}-${randomUUID().slice(0, 8).toUpperCase()}`;
-  const paid = payments(input.amount, input.paymentStatus, input.amountPaid);
-  return serialize(await prisma.expense.create({ data: { reference, vendor: input.vendor || null, description: input.description, category: input.category, amount: input.amount, paymentMethod: input.paymentMethod, paymentStatus: input.paymentStatus, ...paid, incurredAt: input.incurredAt, notes: input.notes || null, customFields: input.customFields, isRecurring: input.isRecurring, recurrence: input.isRecurring ? input.recurrence : null, nextDueAt: input.isRecurring ? input.nextDueAt : null, attachments: input.attachments.length ? { create: input.attachments } : undefined, activity: { create: { action: "CREATED", summary: `Expense recorded for ${input.amount.toFixed(2)}` } } }, include }));
+  const paid = expensePaymentState(input.amount, input.paymentStatus, input.amountPaid);
+  return serialize(await prisma.expense.create({ data: { reference, vendor: input.vendor || null, description: input.description, category: input.category, amount: input.amount, paymentMethod: input.paymentMethod, paymentStatus: paid.status, amountPaid: paid.amountPaid, balanceDue: paid.balanceDue, incurredAt: input.incurredAt, notes: input.notes || null, customFields: input.customFields, isRecurring: input.isRecurring, recurrence: input.isRecurring ? input.recurrence : null, nextDueAt: input.isRecurring ? input.nextDueAt : null, activity: { create: { action: "CREATED", summary: `Expense recorded for ${input.amount.toFixed(2)}` } } }, include }));
 }
 
 export async function updateExpense(id: string, input: ExpenseUpdateInput) {
   const current = await prisma.expense.findUniqueOrThrow({ where: { id } });
   const amount = input.amount ?? Number(current.amount); const status = input.paymentStatus ?? current.paymentStatus;
-  const paid = payments(amount, status, input.amountPaid ?? Number(current.amountPaid));
-  return serialize(await prisma.expense.update({ where: { id }, data: { ...input, reference: input.reference || current.reference, vendor: input.vendor === undefined ? current.vendor : input.vendor || null, notes: input.notes === undefined ? current.notes : input.notes || null, amount, ...paid, attachments: undefined, activity: { create: { action: "UPDATED", summary: "Expense details updated", changes: JSON.parse(JSON.stringify(input)) as Prisma.InputJsonValue } } }, include }));
+  const paid = expensePaymentState(amount, status, input.amountPaid ?? Number(current.amountPaid));
+  return serialize(await prisma.expense.update({ where: { id }, data: { ...input, reference: input.reference || current.reference, vendor: input.vendor === undefined ? current.vendor : input.vendor || null, notes: input.notes === undefined ? current.notes : input.notes || null, amount, paymentStatus: paid.status, amountPaid: paid.amountPaid, balanceDue: paid.balanceDue, attachments: undefined, activity: { create: { action: "UPDATED", summary: "Expense details updated", changes: JSON.parse(JSON.stringify(input)) as Prisma.InputJsonValue } } }, include }));
 }
 
-export async function deleteExpense(id: string) { await prisma.expense.delete({ where: { id } }); }
+export async function deleteExpense(id: string) {
+  const row = await prisma.expense.findUniqueOrThrow({ where: { id }, include: { attachments: true } });
+  await prisma.expense.delete({ where: { id } });
+  for (const attachment of row.attachments) {
+    if (attachment.bucket === "legacy" || attachment.storageKey.startsWith("#mock-")) continue;
+    await getStorage().delete(attachment).catch((error) => console.error("Deleted expense attachment cleanup failed", error));
+  }
+}

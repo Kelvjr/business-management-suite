@@ -33,7 +33,7 @@ async function main() {
       reference, description, category, amount, vendor, paymentMethod, paymentStatus: PaymentStatus.PAID, amountPaid: amount, balanceDue: 0,
       incurredAt: date(daysAgo), isRecurring: Boolean(recurrence), recurrence, nextDueAt: dueIn ? next(dueIn) : null,
       notes: "Mock expense for dashboard exploration", customFields: { source: "mock" },
-      attachments: hasReceipt ? { create: { name: `${reference.toLowerCase()}-receipt.pdf`, mimeType: "application/pdf", size: 84200 + daysAgo * 120, url: "#mock-receipt" } } : undefined,
+      attachments: hasReceipt ? { create: { bucket: "legacy", originalName: `${reference.toLowerCase()}-receipt.pdf`, mimeType: "application/pdf", size: 84200 + daysAgo * 120, storageKey: "#mock-receipt", visibility: "PRIVATE" } } : undefined,
       activity: { create: { action: "CREATED", summary: "Mock expense added" } },
     } });
   }

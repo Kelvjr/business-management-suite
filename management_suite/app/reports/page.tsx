@@ -1,1 +1,1 @@
-import { ReportsPageContent } from "@/components/suite/connected-module-pages"; export default function Page(){return <ReportsPageContent/>}
+import { ReportsPageContent } from "@/components/reports/reports-page-content"; export default function Page(){return <ReportsPageContent/>}

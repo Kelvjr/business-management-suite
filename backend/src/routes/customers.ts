@@ -24,6 +24,6 @@ customersRouter.patch("/:id", async (req, res, next) => {
 });
 
 customersRouter.delete("/:id", async (req, res, next) => {
-  try { await prisma.customer.delete({ where: { id: req.params.id } }); res.status(204).send(); }
+  try { const customer = await prisma.customer.findUniqueOrThrow({ where: { id: req.params.id }, include: { _count: { select: { sales: true, invoices: true, payments: true } } } }); if (customer._count.sales || customer._count.invoices || customer._count.payments) return res.status(409).json({ error: "Customers with sales, invoices, or payment history cannot be deleted" }); await prisma.customer.delete({ where: { id: req.params.id } }); res.status(204).send(); }
   catch (error) { next(error); }
 });

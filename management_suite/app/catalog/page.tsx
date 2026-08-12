@@ -1,1 +1,5 @@
-import { CatalogPageContent } from "@/components/suite/operational-module-pages"; export default function Page(){return <CatalogPageContent/>}
+import { CatalogPageContent } from "@/components/catalog/catalog-page-content";
+
+export default function Page() {
+  return <CatalogPageContent />;
+}

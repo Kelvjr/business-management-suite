@@ -1,65 +1,1291 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { AlertTriangle, Boxes, ChevronRight, ClipboardList, FileText, MoreHorizontal, Package, Pencil, Plus, Search, Store, Trash2, UserRound, Users } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import {
+  AlertTriangle,
+  Boxes,
+  ChevronRight,
+  ClipboardList,
+  FileText,
+  MoreHorizontal,
+  Package,
+  Pencil,
+  Plus,
+  Search,
+  Store,
+  Trash2,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { useBusinessSettings } from "@/components/providers/business-settings-provider";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { customersApi, suiteApi } from "@/lib/api";
-import type { CatalogItem, CustomerInsight, InventoryMovement, Invoice, Purchase, Supplier } from "@/lib/suite";
+import type {
+  CatalogItem,
+  CustomerInsight,
+  InventoryMovement,
+  Invoice,
+  Purchase,
+  Supplier,
+} from "@/lib/suite";
 
-function Shell({title,subtitle,action,children}:{title:string;subtitle:string;action?:ReactNode;children:ReactNode}) { const [nav,setNav]=useState(false); return <AppShell title={title} subtitle={subtitle} actions={action} mobileNavOpen={nav} onMobileNavChange={setNav}>{children}</AppShell> }
-function Field({label,children,className=""}:{label:string;children:ReactNode;className?:string}) { return <label className={`space-y-1.5 text-sm font-medium ${className}`}>{label}{children}</label> }
-function Confirm({open,onOpenChange,title,copy,onConfirm}:{open:boolean;onOpenChange:(v:boolean)=>void;title:string;copy:string;onConfirm:()=>void}) { return <AlertDialog open={open} onOpenChange={onOpenChange}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{title}</AlertDialogTitle><AlertDialogDescription>{copy}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog> }
-function SearchBox({value,onChange,placeholder}:{value:string;onChange:(v:string)=>void;placeholder:string}) { return <div className="relative"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"/><Input className="pl-9 sm:w-72" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/></div> }
-
-const blankItem={kind:"PRODUCT" as CatalogItem["kind"],name:"",sku:"",category:"",costPrice:0,sellingPrice:0,quantity:0,reorderLevel:0,barcode:"",imageUrl:"",durationMinutes:null as number|null,assignedStaff:""};
-type ItemForm=typeof blankItem;
-export function CatalogPageContent(){
-  const business=useBusinessSettings(); const [rows,setRows]=useState<CatalogItem[]>([]); const [kind,setKind]=useState<CatalogItem["kind"]>("PRODUCT"); const [query,setQuery]=useState(""); const [open,setOpen]=useState(false); const [editing,setEditing]=useState<CatalogItem|null>(null); const [deleting,setDeleting]=useState<CatalogItem|null>(null); const [form,setForm]=useState<ItemForm>(blankItem); const [saving,setSaving]=useState(false);
-  const load=()=>suiteApi.catalog().then(setRows); useEffect(()=>{void load()},[]);
-  const visible=useMemo(()=>rows.filter(r=>r.kind===kind&&[r.name,r.category,r.sku,r.barcode].some(v=>v?.toLowerCase().includes(query.toLowerCase()))),[rows,kind,query]);
-  function launch(item?:CatalogItem){setEditing(item??null);setForm(item?{kind:item.kind,name:item.name,sku:item.sku??"",category:item.category,costPrice:item.costPrice,sellingPrice:item.sellingPrice,quantity:item.quantity,reorderLevel:item.reorderLevel,barcode:item.barcode??"",imageUrl:item.imageUrl??"",durationMinutes:item.durationMinutes??null,assignedStaff:item.assignedStaff??""}:{...blankItem,kind});setOpen(true)}
-  async function save(e:FormEvent){e.preventDefault();setSaving(true);try{const payload={...form,sku:form.sku||null,barcode:form.barcode||null,imageUrl:form.imageUrl||null,assignedStaff:form.assignedStaff||null};if(editing)await suiteApi.updateCatalog(editing.id,payload);else await suiteApi.createCatalog(payload);await load();setOpen(false)}finally{setSaving(false)}}
-  async function remove(){if(!deleting)return;await suiteApi.removeCatalog(deleting.id);setRows(r=>r.filter(x=>x.id!==deleting.id));setDeleting(null)}
-  return <Shell title="Products & services" subtitle="Reusable items that power sales, inventory, purchasing, and reporting." action={<Button onClick={()=>launch()}><Plus/>Add {kind==="PRODUCT"?"product":"service"}</Button>}><div className="space-y-5"><section className="grid gap-3 sm:grid-cols-3"><Metric label="Products" value={rows.filter(r=>r.kind==="PRODUCT").length}/><Metric label="Services" value={rows.filter(r=>r.kind==="SERVICE").length}/><Metric label="Stock value" value={business.formatMoney(rows.filter(r=>r.kind==="PRODUCT").reduce((s,r)=>s+r.costPrice*r.quantity,0))}/></section><Card><div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between"><Tabs value={kind} onValueChange={v=>setKind(v as CatalogItem["kind"])}><TabsList><TabsTrigger value="PRODUCT">Products</TabsTrigger><TabsTrigger value="SERVICE">Services</TabsTrigger></TabsList></Tabs><SearchBox value={query} onChange={setQuery} placeholder="Search products or services…"/></div><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Category</TableHead><TableHead className="hidden md:table-cell">Identifier</TableHead><TableHead className="text-right">Price</TableHead><TableHead className="text-right">{kind==="PRODUCT"?"Stock":"Duration"}</TableHead><TableHead className="w-12"/></TableRow></TableHeader><TableBody>{visible.map(item=><TableRow key={item.id} className="cursor-pointer" onClick={()=>launch(item)}><TableCell><p className="font-semibold">{item.name}</p><p className="text-xs text-muted-foreground">Click to view and edit</p></TableCell><TableCell><Badge variant="outline">{item.category}</Badge></TableCell><TableCell className="hidden md:table-cell">{item.kind==="PRODUCT"?(item.sku||item.barcode||"—"):(item.assignedStaff||"Unassigned")}</TableCell><TableCell className="text-right font-semibold">{business.formatMoney(item.sellingPrice)}</TableCell><TableCell className="text-right">{item.kind==="PRODUCT"?<Badge className={item.quantity<=item.reorderLevel?"bg-amber-100 text-amber-800":"bg-emerald-100 text-emerald-800"}>{item.quantity}</Badge>:`${item.durationMinutes??"—"} min`}</TableCell><TableCell onClick={e=>e.stopPropagation()}><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>launch(item)}><Pencil/>Edit</DropdownMenuItem><DropdownMenuItem className="text-red-600" onSelect={()=>setDeleting(item)}><Trash2/>Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>)}</TableBody></Table></Card></div><Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle>{editing?`Edit ${form.name}`:`Add ${kind.toLowerCase()}`}</DialogTitle><DialogDescription>Changes appear everywhere this item is used.</DialogDescription></DialogHeader><form onSubmit={save}><div className="grid gap-4 sm:grid-cols-2"><Field label="Name"><Input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Category"><Input value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}/></Field><Field label="Selling price"><Input type="number" min="0.01" step="0.01" value={form.sellingPrice||""} onChange={e=>setForm(f=>({...f,sellingPrice:+e.target.value}))}/></Field>{form.kind==="PRODUCT"?<><Field label="Cost price"><Input type="number" min="0" step="0.01" value={form.costPrice||""} onChange={e=>setForm(f=>({...f,costPrice:+e.target.value}))}/></Field><Field label="SKU"><Input value={form.sku} onChange={e=>setForm(f=>({...f,sku:e.target.value}))}/></Field><Field label="Barcode"><Input value={form.barcode} onChange={e=>setForm(f=>({...f,barcode:e.target.value}))}/></Field><Field label="Quantity"><Input type="number" min="0" step="0.001" value={form.quantity||""} onChange={e=>setForm(f=>({...f,quantity:+e.target.value}))}/></Field><Field label="Reorder level"><Input type="number" min="0" step="0.001" value={form.reorderLevel||""} onChange={e=>setForm(f=>({...f,reorderLevel:+e.target.value}))}/></Field><Field label="Image URL" className="sm:col-span-2"><Input value={form.imageUrl} onChange={e=>setForm(f=>({...f,imageUrl:e.target.value}))}/></Field></>:<><Field label="Duration (minutes)"><Input type="number" min="1" value={form.durationMinutes??""} onChange={e=>setForm(f=>({...f,durationMinutes:+e.target.value}))}/></Field><Field label="Assigned staff"><Input value={form.assignedStaff} onChange={e=>setForm(f=>({...f,assignedStaff:e.target.value}))}/></Field></>}</div><DialogFooter><Button type="button" variant="outline" onClick={()=>setOpen(false)}>Cancel</Button><Button disabled={saving||!form.name||!form.category||!form.sellingPrice}>{saving?"Saving…":"Save changes"}</Button></DialogFooter></form></DialogContent></Dialog><Confirm open={!!deleting} onOpenChange={v=>!v&&setDeleting(null)} title="Delete this item?" copy="It will be removed from the reusable catalog. Historical sales remain intact." onConfirm={()=>void remove()}/></Shell>
+function Shell({
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  const [nav, setNav] = useState(false);
+  return (
+    <AppShell
+      title={title}
+      subtitle={subtitle}
+      actions={action}
+      mobileNavOpen={nav}
+      onMobileNavChange={setNav}
+    >
+      {children}
+    </AppShell>
+  );
+}
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <label className={`space-y-1.5 text-sm font-medium ${className}`}>
+      {label}
+      {children}
+    </label>
+  );
+}
+function Confirm({
+  open,
+  onOpenChange,
+  title,
+  copy,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  copy: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{copy}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+function SearchBox({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        className="pl-9 sm:w-72"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
 }
 
-const blankCustomer={name:"",phone:"",email:"",address:"",birthday:"",notes:""};
-export function CustomersPageContent(){
-  const business=useBusinessSettings();const [rows,setRows]=useState<CustomerInsight[]>([]);const [query,setQuery]=useState("");const [open,setOpen]=useState(false);const [editing,setEditing]=useState<CustomerInsight|null>(null);const [deleting,setDeleting]=useState<CustomerInsight|null>(null);const [form,setForm]=useState(blankCustomer);const load=()=>suiteApi.customerInsights().then(setRows);useEffect(()=>{void load()},[]);const visible=rows.filter(r=>[r.name,r.phone,r.email].some(v=>v?.toLowerCase().includes(query.toLowerCase())));
-  function launch(row?:CustomerInsight){setEditing(row??null);setForm(row?{name:row.name,phone:row.phone??"",email:row.email??"",address:row.address??"",birthday:row.birthday?.slice(0,10)??"",notes:row.notes??""}:blankCustomer);setOpen(true)}
-  async function save(e:FormEvent){e.preventDefault();const payload={...form,birthday:form.birthday||null};if(editing)await customersApi.update(editing.id,payload);else await customersApi.create(payload);await load();setOpen(false)}
-  async function remove(){if(!deleting)return;await customersApi.remove(deleting.id);setRows(r=>r.filter(x=>x.id!==deleting.id));setDeleting(null)}
-  return <Shell title="Customers" subtitle="Profiles, contact details, purchase behavior, and relationship history." action={<Button onClick={()=>launch()}><Plus/>Add customer</Button>}><div className="space-y-5"><section className="grid gap-3 sm:grid-cols-3"><Metric label="Customers" value={rows.length}/><Metric label="Customer revenue" value={business.formatMoney(rows.reduce((s,r)=>s+r.totalSpent,0))}/><Metric label="Average value" value={business.formatMoney(rows.length?rows.reduce((s,r)=>s+r.totalSpent,0)/rows.length:0)}/></section><Card><div className="flex items-center justify-between border-b p-4"><div><CardTitle>Customer profiles</CardTitle><CardDescription>Click any customer to view and edit</CardDescription></div><SearchBox value={query} onChange={setQuery} placeholder="Search customers…"/></div><Table><TableHeader><TableRow><TableHead>Customer</TableHead><TableHead className="hidden md:table-cell">Contact</TableHead><TableHead>Orders</TableHead><TableHead className="hidden lg:table-cell">Last purchase</TableHead><TableHead className="text-right">Total spent</TableHead><TableHead className="w-12"/></TableRow></TableHeader><TableBody>{visible.map(row=><TableRow key={row.id} className="cursor-pointer" onClick={()=>launch(row)}><TableCell><p className="font-semibold">{row.name}</p><p className="text-xs text-muted-foreground">{row.address||"No address"}</p></TableCell><TableCell className="hidden md:table-cell"><p>{row.phone||"—"}</p><p className="text-xs text-muted-foreground">{row.email||"—"}</p></TableCell><TableCell>{row.orders}</TableCell><TableCell className="hidden lg:table-cell">{row.lastPurchase?new Date(row.lastPurchase).toLocaleDateString():"Never"}</TableCell><TableCell className="text-right font-semibold">{business.formatMoney(row.totalSpent)}</TableCell><TableCell onClick={e=>e.stopPropagation()}><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>launch(row)}><Pencil/>Edit</DropdownMenuItem><DropdownMenuItem className="text-red-600" onSelect={()=>setDeleting(row)}><Trash2/>Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></TableCell></TableRow>)}</TableBody></Table></Card></div><Dialog open={open} onOpenChange={setOpen}><DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{editing?editing.name:"Add customer"}</DialogTitle><DialogDescription>{editing?`${editing.orders} orders · ${business.formatMoney(editing.totalSpent)} spent · Favorite: ${editing.favoriteProduct||"Not known"}`:"Create a profile that can be selected in sales and invoices."}</DialogDescription></DialogHeader><form onSubmit={save}><div className="grid gap-4 sm:grid-cols-2"><Field label="Name"><Input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Phone"><Input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></Field><Field label="Email"><Input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></Field><Field label="Birthday"><Input type="date" value={form.birthday} onChange={e=>setForm(f=>({...f,birthday:e.target.value}))}/></Field><Field label="Address" className="sm:col-span-2"><Input value={form.address} onChange={e=>setForm(f=>({...f,address:e.target.value}))}/></Field><Field label="Notes" className="sm:col-span-2"><Textarea value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></Field></div><DialogFooter><Button type="button" variant="outline" onClick={()=>setOpen(false)}>Cancel</Button><Button disabled={!form.name}>Save customer</Button></DialogFooter></form></DialogContent></Dialog><Confirm open={!!deleting} onOpenChange={v=>!v&&setDeleting(null)} title="Delete this customer?" copy="Sales remain, but they will no longer be linked to this profile." onConfirm={()=>void remove()}/></Shell>
+const blankItem = {
+  kind: "PRODUCT" as CatalogItem["kind"],
+  name: "",
+  sku: "",
+  category: "",
+  costPrice: 0,
+  sellingPrice: 0,
+  quantity: 0,
+  reorderLevel: 0,
+  barcode: "",
+  imageUrl: "",
+  durationMinutes: null as number | null,
+  assignedStaff: "",
+};
+type ItemForm = typeof blankItem;
+export function CatalogPageContent() {
+  const business = useBusinessSettings();
+  const [rows, setRows] = useState<CatalogItem[]>([]);
+  const [kind, setKind] = useState<CatalogItem["kind"]>("PRODUCT");
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CatalogItem | null>(null);
+  const [deleting, setDeleting] = useState<CatalogItem | null>(null);
+  const [form, setForm] = useState<ItemForm>(blankItem);
+  const [saving, setSaving] = useState(false);
+  const load = () => suiteApi.catalog().then(setRows);
+  useEffect(() => {
+    void load();
+  }, []);
+  const visible = useMemo(
+    () =>
+      rows.filter(
+        (r) =>
+          r.kind === kind &&
+          [r.name, r.category, r.sku, r.barcode].some((v) =>
+            v?.toLowerCase().includes(query.toLowerCase()),
+          ),
+      ),
+    [rows, kind, query],
+  );
+  function launch(item?: CatalogItem) {
+    setEditing(item ?? null);
+    setForm(
+      item
+        ? {
+            kind: item.kind,
+            name: item.name,
+            sku: item.sku ?? "",
+            category: item.category,
+            costPrice: item.costPrice,
+            sellingPrice: item.sellingPrice,
+            quantity: item.quantity,
+            reorderLevel: item.reorderLevel,
+            barcode: item.barcode ?? "",
+            imageUrl: item.imageUrl ?? "",
+            durationMinutes: item.durationMinutes ?? null,
+            assignedStaff: item.assignedStaff ?? "",
+          }
+        : { ...blankItem, kind },
+    );
+    setOpen(true);
+  }
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        sku: form.sku || null,
+        barcode: form.barcode || null,
+        imageUrl: form.imageUrl || null,
+        assignedStaff: form.assignedStaff || null,
+      };
+      if (editing) await suiteApi.updateCatalog(editing.id, payload);
+      else await suiteApi.createCatalog(payload);
+      await load();
+      setOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function remove() {
+    if (!deleting) return;
+    await suiteApi.removeCatalog(deleting.id);
+    setRows((r) => r.filter((x) => x.id !== deleting.id));
+    setDeleting(null);
+  }
+  return (
+    <Shell
+      title="Products & services"
+      subtitle="Reusable items that power sales, inventory, purchasing, and reporting."
+      action={
+        <Button onClick={() => launch()}>
+          <Plus />
+          Add {kind === "PRODUCT" ? "product" : "service"}
+        </Button>
+      }
+    >
+      <div className="space-y-5">
+        <section className="grid gap-3 sm:grid-cols-3">
+          <Metric
+            label="Products"
+            value={rows.filter((r) => r.kind === "PRODUCT").length}
+          />
+          <Metric
+            label="Services"
+            value={rows.filter((r) => r.kind === "SERVICE").length}
+          />
+          <Metric
+            label="Stock value"
+            value={business.formatMoney(
+              rows
+                .filter((r) => r.kind === "PRODUCT")
+                .reduce((s, r) => s + r.costPrice * r.quantity, 0),
+            )}
+          />
+        </section>
+        <Card>
+          <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+            <Tabs
+              value={kind}
+              onValueChange={(v) => setKind(v as CatalogItem["kind"])}
+            >
+              <TabsList>
+                <TabsTrigger value="PRODUCT">Products</TabsTrigger>
+                <TabsTrigger value="SERVICE">Services</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              placeholder="Search products or services…"
+            />
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Identifier
+                </TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">
+                  {kind === "PRODUCT" ? "Stock" : "Duration"}
+                </TableHead>
+                <TableHead className="w-12" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((item) => (
+                <TableRow
+                  key={item.id}
+                  className="cursor-pointer"
+                  onClick={() => launch(item)}
+                >
+                  <TableCell>
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Click to view and edit
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{item.category}</Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {item.kind === "PRODUCT"
+                      ? item.sku || item.barcode || "—"
+                      : item.assignedStaff || "Unassigned"}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {business.formatMoney(item.sellingPrice)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {item.kind === "PRODUCT" ? (
+                      <Badge
+                        className={
+                          item.quantity <= item.reorderLevel
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }
+                      >
+                        {item.quantity}
+                      </Badge>
+                    ) : (
+                      `${item.durationMinutes ?? "—"} min`
+                    )}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => launch(item)}>
+                          <Pencil />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onSelect={() => setDeleting(item)}
+                        >
+                          <Trash2 />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? `Edit ${form.name}` : `Add ${kind.toLowerCase()}`}
+            </DialogTitle>
+            <DialogDescription>
+              Changes appear everywhere this item is used.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={save}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Name">
+                <Input
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Category">
+                <Input
+                  value={form.category}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, category: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Selling price">
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.sellingPrice || ""}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, sellingPrice: +e.target.value }))
+                  }
+                />
+              </Field>
+              {form.kind === "PRODUCT" ? (
+                <>
+                  <Field label="Cost price">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.costPrice || ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, costPrice: +e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="SKU">
+                    <Input
+                      value={form.sku}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, sku: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Barcode">
+                    <Input
+                      value={form.barcode}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, barcode: e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Quantity">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={form.quantity || ""}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, quantity: +e.target.value }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Reorder level">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.001"
+                      value={form.reorderLevel || ""}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          reorderLevel: +e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Image URL" className="sm:col-span-2">
+                    <Input
+                      value={form.imageUrl}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, imageUrl: e.target.value }))
+                      }
+                    />
+                  </Field>
+                </>
+              ) : (
+                <>
+                  <Field label="Duration (minutes)">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={form.durationMinutes ?? ""}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          durationMinutes: +e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                  <Field label="Assigned staff">
+                    <Input
+                      value={form.assignedStaff}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          assignedStaff: e.target.value,
+                        }))
+                      }
+                    />
+                  </Field>
+                </>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={
+                  saving || !form.name || !form.category || !form.sellingPrice
+                }
+              >
+                {saving ? "Saving…" : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Confirm
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title="Delete this item?"
+        copy="It will be removed from the reusable catalog. Historical sales remain intact."
+        onConfirm={() => void remove()}
+      />
+    </Shell>
+  );
 }
 
-export function InventoryPageContent(){
-  const [data,setData]=useState<{items:CatalogItem[];movements:InventoryMovement[]}>({items:[],movements:[]});const [open,setOpen]=useState(false);const [selected,setSelected]=useState("");const [type,setType]=useState<InventoryMovement["type"]>("STOCK_IN");const [quantity,setQuantity]=useState(0);const [notes,setNotes]=useState("");const load=()=>suiteApi.inventory().then(setData);useEffect(()=>{void load()},[]);const low=data.items.filter(i=>i.quantity<=i.reorderLevel);
-  function launch(id=""){setSelected(id);setType("STOCK_IN");setQuantity(0);setNotes("");setOpen(true)}async function move(e:FormEvent){e.preventDefault();await suiteApi.moveStock({catalogItemId:selected,type,quantity,reference:"MANUAL",notes});await load();setOpen(false)}
-  return <Shell title="Inventory" subtitle="Stock levels, adjustments, transfers, low-stock alerts, and history." action={<Button onClick={()=>launch()}><Plus/>Stock movement</Button>}><div className="space-y-5"><section className="grid gap-3 sm:grid-cols-3"><Metric label="Products" value={data.items.length}/><Metric label="Units on hand" value={data.items.reduce((s,r)=>s+r.quantity,0)}/><Metric label="Low stock" value={low.length}/></section>{low.length>0&&<Card className="border-amber-200 bg-amber-50"><CardContent className="flex items-center gap-3 p-4 text-amber-900"><AlertTriangle className="size-5"/><div><p className="font-semibold">{low.length} items need attention</p><p className="text-xs">{low.map(i=>`${i.name} (${i.quantity})`).join(" · ")}</p></div></CardContent></Card>}<div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]"><Card><CardHeader><CardTitle>Current stock</CardTitle><CardDescription>Click a row to stock in, stock out, transfer, or set an exact quantity.</CardDescription></CardHeader><Table><TableHeader><TableRow><TableHead>Product</TableHead><TableHead>SKU</TableHead><TableHead className="text-right">On hand</TableHead><TableHead className="text-right">Reorder</TableHead><TableHead className="w-10"/></TableRow></TableHeader><TableBody>{data.items.map(item=><TableRow key={item.id} className="cursor-pointer" onClick={()=>launch(item.id)}><TableCell className="font-semibold">{item.name}</TableCell><TableCell>{item.sku||"—"}</TableCell><TableCell className="text-right"><Badge className={item.quantity<=item.reorderLevel?"bg-amber-100 text-amber-800":"bg-emerald-100 text-emerald-800"}>{item.quantity}</Badge></TableCell><TableCell className="text-right">{item.reorderLevel}</TableCell><TableCell><ChevronRight className="size-4 text-muted-foreground"/></TableCell></TableRow>)}</TableBody></Table></Card><Card><CardHeader><CardTitle>Stock history</CardTitle><CardDescription>Latest recorded movements</CardDescription></CardHeader><CardContent className="space-y-1">{data.movements.slice(0,15).map(m=><button key={m.id} className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-muted" onClick={()=>launch(data.items.find(i=>i.name===m.catalogItem.name)?.id)}><span className={`size-2 rounded-full ${m.type==="STOCK_OUT"?"bg-orange-500":"bg-emerald-500"}`}/><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{m.catalogItem.name}</p><p className="text-xs text-muted-foreground">{m.type.replaceAll("_"," ")} · {m.beforeQty} → {m.afterQty}</p></div><strong className="text-sm">{m.quantity}</strong></button>)}</CardContent></Card></div></div><Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>Record stock movement</DialogTitle><DialogDescription>The change is saved in stock history immediately.</DialogDescription></DialogHeader><form onSubmit={move}><div className="space-y-4"><Field label="Product"><Select value={selected} onValueChange={setSelected}><SelectTrigger><SelectValue placeholder="Choose product"/></SelectTrigger><SelectContent>{data.items.map(i=><SelectItem key={i.id} value={i.id}>{i.name} · {i.quantity} on hand</SelectItem>)}</SelectContent></Select></Field><Field label="Movement"><Select value={type} onValueChange={v=>setType(v as InventoryMovement["type"])}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="STOCK_IN">Stock in</SelectItem><SelectItem value="STOCK_OUT">Stock out</SelectItem><SelectItem value="ADJUSTMENT">Set exact quantity</SelectItem><SelectItem value="TRANSFER">Transfer in</SelectItem></SelectContent></Select></Field><Field label={type==="ADJUSTMENT"?"New quantity":"Quantity"}><Input type="number" min="0" step="0.001" value={quantity||""} onChange={e=>setQuantity(+e.target.value)}/></Field><Field label="Reference / notes"><Textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Why is stock changing?"/></Field></div><DialogFooter><Button type="button" variant="outline" onClick={()=>setOpen(false)}>Cancel</Button><Button disabled={!selected||(type!=="ADJUSTMENT"&&quantity<=0)}>Save movement</Button></DialogFooter></form></DialogContent></Dialog></Shell>
+const blankCustomer = {
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  birthday: "",
+  notes: "",
+};
+export function CustomersPageContent() {
+  const business = useBusinessSettings();
+  const [rows, setRows] = useState<CustomerInsight[]>([]);
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<CustomerInsight | null>(null);
+  const [deleting, setDeleting] = useState<CustomerInsight | null>(null);
+  const [form, setForm] = useState(blankCustomer);
+  const load = () => suiteApi.customerInsights().then(setRows);
+  useEffect(() => {
+    void load();
+  }, []);
+  const visible = rows.filter((r) =>
+    [r.name, r.phone, r.email].some((v) =>
+      v?.toLowerCase().includes(query.toLowerCase()),
+    ),
+  );
+  function launch(row?: CustomerInsight) {
+    setEditing(row ?? null);
+    setForm(
+      row
+        ? {
+            name: row.name,
+            phone: row.phone ?? "",
+            email: row.email ?? "",
+            address: row.address ?? "",
+            birthday: row.birthday?.slice(0, 10) ?? "",
+            notes: row.notes ?? "",
+          }
+        : blankCustomer,
+    );
+    setOpen(true);
+  }
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    const payload = { ...form, birthday: form.birthday || null };
+    if (editing) await customersApi.update(editing.id, payload);
+    else await customersApi.create(payload);
+    await load();
+    setOpen(false);
+  }
+  async function remove() {
+    if (!deleting) return;
+    await customersApi.remove(deleting.id);
+    setRows((r) => r.filter((x) => x.id !== deleting.id));
+    setDeleting(null);
+  }
+  return (
+    <Shell
+      title="Customers"
+      subtitle="Profiles, contact details, purchase behavior, and relationship history."
+      action={
+        <Button onClick={() => launch()}>
+          <Plus />
+          Add customer
+        </Button>
+      }
+    >
+      <div className="space-y-5">
+        <section className="grid gap-3 sm:grid-cols-3">
+          <Metric label="Customers" value={rows.length} />
+          <Metric
+            label="Customer revenue"
+            value={business.formatMoney(
+              rows.reduce((s, r) => s + r.totalSpent, 0),
+            )}
+          />
+          <Metric
+            label="Average value"
+            value={business.formatMoney(
+              rows.length
+                ? rows.reduce((s, r) => s + r.totalSpent, 0) / rows.length
+                : 0,
+            )}
+          />
+        </section>
+        <Card>
+          <div className="flex items-center justify-between border-b p-4">
+            <div>
+              <CardTitle>Customer profiles</CardTitle>
+              <CardDescription>
+                Click any customer to view and edit
+              </CardDescription>
+            </div>
+            <SearchBox
+              value={query}
+              onChange={setQuery}
+              placeholder="Search customers…"
+            />
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead className="hidden md:table-cell">Contact</TableHead>
+                <TableHead>Orders</TableHead>
+                <TableHead className="hidden lg:table-cell">
+                  Last purchase
+                </TableHead>
+                <TableHead className="text-right">Total spent</TableHead>
+                <TableHead className="w-12" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className="cursor-pointer"
+                  onClick={() => launch(row)}
+                >
+                  <TableCell>
+                    <p className="font-semibold">{row.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {row.address || "No address"}
+                    </p>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <p>{row.phone || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {row.email || "—"}
+                    </p>
+                  </TableCell>
+                  <TableCell>{row.orders}</TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {row.lastPurchase
+                      ? new Date(row.lastPurchase).toLocaleDateString()
+                      : "Never"}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {business.formatMoney(row.totalSpent)}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => launch(row)}>
+                          <Pencil />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onSelect={() => setDeleting(row)}
+                        >
+                          <Trash2 />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? editing.name : "Add customer"}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? `${editing.orders} orders · ${business.formatMoney(editing.totalSpent)} spent · Favorite: ${editing.favoriteProduct || "Not known"}`
+                : "Create a profile that can be selected in sales and invoices."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={save}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Name">
+                <Input
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Phone">
+                <Input
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, phone: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Email">
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, email: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Birthday">
+                <Input
+                  type="date"
+                  value={form.birthday}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, birthday: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Address" className="sm:col-span-2">
+                <Input
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, address: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Notes" className="sm:col-span-2">
+                <Textarea
+                  value={form.notes}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, notes: e.target.value }))
+                  }
+                />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button disabled={!form.name}>Save customer</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Confirm
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title="Delete this customer?"
+        copy="Sales remain, but they will no longer be linked to this profile."
+        onConfirm={() => void remove()}
+      />
+    </Shell>
+  );
 }
 
-const blankSupplier={name:"",contactName:"",phone:"",email:"",address:"",paymentTerms:"",outstandingBalance:0};
-export function SuppliersPageContent(){
-  const business=useBusinessSettings();const [rows,setRows]=useState<Supplier[]>([]);const [open,setOpen]=useState(false);const [editing,setEditing]=useState<Supplier|null>(null);const [deleting,setDeleting]=useState<Supplier|null>(null);const [form,setForm]=useState(blankSupplier);const load=()=>suiteApi.suppliers().then(setRows);useEffect(()=>{void load()},[]);
-  function launch(row?:Supplier){setEditing(row??null);setForm(row?{name:row.name,contactName:row.contactName??"",phone:row.phone??"",email:row.email??"",address:row.address??"",paymentTerms:row.paymentTerms??"",outstandingBalance:row.outstandingBalance}:blankSupplier);setOpen(true)}async function save(e:FormEvent){e.preventDefault();if(editing)await suiteApi.updateSupplier(editing.id,form);else await suiteApi.createSupplier(form);await load();setOpen(false)}async function remove(){if(!deleting)return;await suiteApi.removeSupplier(deleting.id);await load();setDeleting(null)}
-  return <Shell title="Suppliers" subtitle="Contacts, terms, supplied products, balances, and purchase history." action={<Button onClick={()=>launch()}><Plus/>Add supplier</Button>}><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{rows.map(row=><Card key={row.id} className="cursor-pointer transition hover:border-primary/40 hover:shadow-sm" onClick={()=>launch(row)}><CardHeader><div className="flex items-start justify-between"><div><CardTitle>{row.name}</CardTitle><CardDescription>{row.contactName||"No contact person"}</CardDescription></div><DropdownMenu><DropdownMenuTrigger asChild onClick={e=>e.stopPropagation()}><Button variant="ghost" size="icon"><MoreHorizontal/></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={()=>launch(row)}><Pencil/>Edit</DropdownMenuItem><DropdownMenuItem className="text-red-600" onSelect={()=>setDeleting(row)}><Trash2/>Delete</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></CardHeader><CardContent className="space-y-3 text-sm"><p className="flex justify-between"><span className="text-muted-foreground">Phone</span><span>{row.phone||"—"}</span></p><p className="flex justify-between"><span className="text-muted-foreground">Terms</span><span>{row.paymentTerms||"—"}</span></p><p className="flex justify-between"><span className="text-muted-foreground">Products</span><strong>{row.products.length}</strong></p><p className="flex justify-between"><span className="text-muted-foreground">Purchase orders</span><strong>{row.purchases.length}</strong></p><p className="flex justify-between border-t pt-3"><span>Outstanding</span><strong className="text-amber-700">{business.formatMoney(row.outstandingBalance)}</strong></p></CardContent></Card>)}</div><Dialog open={open} onOpenChange={setOpen}><DialogContent><DialogHeader><DialogTitle>{editing?editing.name:"Add supplier"}</DialogTitle><DialogDescription>{editing?`${editing.purchases.length} purchase orders · ${editing.products.length} linked products`:"Create a supplier for purchase orders and stock receipts."}</DialogDescription></DialogHeader><form onSubmit={save}><div className="grid gap-4 sm:grid-cols-2"><Field label="Supplier name"><Input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Contact person"><Input value={form.contactName} onChange={e=>setForm(f=>({...f,contactName:e.target.value}))}/></Field><Field label="Phone"><Input value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))}/></Field><Field label="Email"><Input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}/></Field><Field label="Payment terms"><Input value={form.paymentTerms} onChange={e=>setForm(f=>({...f,paymentTerms:e.target.value}))} placeholder="e.g. Net 30"/></Field><Field label="Opening balance"><Input type="number" min="0" step="0.01" value={form.outstandingBalance||""} onChange={e=>setForm(f=>({...f,outstandingBalance:+e.target.value}))}/></Field><Field label="Address" className="sm:col-span-2"><Input value={form.address} onChange={e=>setForm(f=>({...f,address:e.target.value}))}/></Field></div><DialogFooter><Button type="button" variant="outline" onClick={()=>setOpen(false)}>Cancel</Button><Button disabled={!form.name}>Save supplier</Button></DialogFooter></form></DialogContent></Dialog><Confirm open={!!deleting} onOpenChange={v=>!v&&setDeleting(null)} title="Delete this supplier?" copy="Suppliers with purchase history cannot be removed until those records are handled." onConfirm={()=>void remove()}/></Shell>
+export function InventoryPageContent() {
+  const [data, setData] = useState<{
+    items: CatalogItem[];
+    movements: InventoryMovement[];
+  }>({ items: [], movements: [] });
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [type, setType] = useState<InventoryMovement["type"]>("STOCK_IN");
+  const [quantity, setQuantity] = useState(0);
+  const [notes, setNotes] = useState("");
+  const load = () => suiteApi.inventory().then(setData);
+  useEffect(() => {
+    void load();
+  }, []);
+  const low = data.items.filter((i) => i.quantity <= i.reorderLevel);
+  function launch(id = "") {
+    setSelected(id);
+    setType("STOCK_IN");
+    setQuantity(0);
+    setNotes("");
+    setOpen(true);
+  }
+  async function move(e: FormEvent) {
+    e.preventDefault();
+    await suiteApi.moveStock({
+      catalogItemId: selected,
+      type,
+      quantity,
+      reference: "MANUAL",
+      notes,
+    });
+    await load();
+    setOpen(false);
+  }
+  return (
+    <Shell
+      title="Inventory"
+      subtitle="Stock levels, adjustments, transfers, low-stock alerts, and history."
+      action={
+        <Button onClick={() => launch()}>
+          <Plus />
+          Stock movement
+        </Button>
+      }
+    >
+      <div className="space-y-5">
+        <section className="grid gap-3 sm:grid-cols-3">
+          <Metric label="Products" value={data.items.length} />
+          <Metric
+            label="Units on hand"
+            value={data.items.reduce((s, r) => s + r.quantity, 0)}
+          />
+          <Metric label="Low stock" value={low.length} />
+        </section>
+        {low.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="flex items-center gap-3 p-4 text-amber-900">
+              <AlertTriangle className="size-5" />
+              <div>
+                <p className="font-semibold">
+                  {low.length} items need attention
+                </p>
+                <p className="text-xs">
+                  {low.map((i) => `${i.name} (${i.quantity})`).join(" · ")}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <Card>
+            <CardHeader>
+              <CardTitle>Current stock</CardTitle>
+              <CardDescription>
+                Click a row to stock in, stock out, transfer, or set an exact
+                quantity.
+              </CardDescription>
+            </CardHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead className="text-right">On hand</TableHead>
+                  <TableHead className="text-right">Reorder</TableHead>
+                  <TableHead className="w-10" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.items.map((item) => (
+                  <TableRow
+                    key={item.id}
+                    className="cursor-pointer"
+                    onClick={() => launch(item.id)}
+                  >
+                    <TableCell className="font-semibold">{item.name}</TableCell>
+                    <TableCell>{item.sku || "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge
+                        className={
+                          item.quantity <= item.reorderLevel
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-emerald-100 text-emerald-800"
+                        }
+                      >
+                        {item.quantity}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {item.reorderLevel}
+                    </TableCell>
+                    <TableCell>
+                      <ChevronRight className="size-4 text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Stock history</CardTitle>
+              <CardDescription>Latest recorded movements</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              {data.movements.slice(0, 15).map((m) => (
+                <button
+                  key={m.id}
+                  className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-muted"
+                  onClick={() =>
+                    launch(
+                      data.items.find((i) => i.name === m.catalogItem.name)?.id,
+                    )
+                  }
+                >
+                  <span
+                    className={`size-2 rounded-full ${m.type === "STOCK_OUT" ? "bg-orange-500" : "bg-emerald-500"}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {m.catalogItem.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.type.replaceAll("_", " ")} · {m.beforeQty} →{" "}
+                      {m.afterQty}
+                    </p>
+                  </div>
+                  <strong className="text-sm">{m.quantity}</strong>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record stock movement</DialogTitle>
+            <DialogDescription>
+              The change is saved in stock history immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={move}>
+            <div className="space-y-4">
+              <Field label="Product">
+                <Select value={selected} onValueChange={setSelected}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.items.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>
+                        {i.name} · {i.quantity} on hand
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Movement">
+                <Select
+                  value={type}
+                  onValueChange={(v) => setType(v as InventoryMovement["type"])}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="STOCK_IN">Stock in</SelectItem>
+                    <SelectItem value="STOCK_OUT">Stock out</SelectItem>
+                    <SelectItem value="ADJUSTMENT">
+                      Set exact quantity
+                    </SelectItem>
+                    <SelectItem value="TRANSFER">Transfer in</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field
+                label={type === "ADJUSTMENT" ? "New quantity" : "Quantity"}
+              >
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={quantity || ""}
+                  onChange={(e) => setQuantity(+e.target.value)}
+                />
+              </Field>
+              <Field label="Reference / notes">
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Why is stock changing?"
+                />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!selected || (type !== "ADJUSTMENT" && quantity <= 0)}
+              >
+                Save movement
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Shell>
+  );
 }
 
-export function PurchasesPageContent(){const business=useBusinessSettings();const [rows,setRows]=useState<Purchase[]>([]);const [selected,setSelected]=useState<Purchase|null>(null);const [deleting,setDeleting]=useState<Purchase|null>(null);const [status,setStatus]=useState("DRAFT");const [paid,setPaid]=useState(0);const load=()=>suiteApi.purchases().then(setRows);useEffect(()=>{void load()},[]);function launch(r:Purchase){setSelected(r);setStatus(r.status);setPaid(r.amountPaid)}async function save(){if(!selected)return;await suiteApi.updatePurchase(selected.id,{status,amountPaid:paid});await load();setSelected(null)}async function remove(){if(!deleting)return;await suiteApi.removePurchase(deleting.id);await load();setDeleting(null)}return <Shell title="Purchases" subtitle="Purchase orders, receiving, supplier bills, and payments." action={<Button asChild><Link href="/purchases/new"><Plus/>New purchase order</Link></Button>}><Card><Table><TableHeader><TableRow><TableHead>Reference</TableHead><TableHead>Supplier</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Balance</TableHead><TableHead className="w-12"/></TableRow></TableHeader><TableBody>{rows.map(r=><TableRow key={r.id} className="cursor-pointer" onClick={()=>launch(r)}><TableCell className="font-mono font-semibold">{r.reference}</TableCell><TableCell>{r.supplier.name}</TableCell><TableCell><Badge variant="outline">{r.status}</Badge></TableCell><TableCell className="text-right">{business.formatMoney(r.total)}</TableCell><TableCell className="text-right">{business.formatMoney(r.total-r.amountPaid)}</TableCell><TableCell><ChevronRight className="size-4"/></TableCell></TableRow>)}</TableBody></Table></Card><Dialog open={!!selected} onOpenChange={v=>!v&&setSelected(null)}><DialogContent><DialogHeader><DialogTitle>{selected?.reference}</DialogTitle><DialogDescription>{selected?.supplier.name} · {selected?.items.map(i=>`${i.catalogItem.name} × ${i.quantity}`).join(", ")}</DialogDescription></DialogHeader><div className="space-y-4"><Field label="Status"><Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ORDERED">Ordered</SelectItem><SelectItem value="RECEIVED">Received — add stock</SelectItem></SelectContent></Select></Field><Field label="Amount paid"><Input type="number" min="0" max={selected?.total} step="0.01" value={paid||""} onChange={e=>setPaid(+e.target.value)}/></Field></div><DialogFooter className="justify-between"><Button variant="destructive" onClick={()=>{setDeleting(selected);setSelected(null)}}><Trash2/>Delete</Button><div className="flex gap-2"><Button variant="outline" onClick={()=>setSelected(null)}>Cancel</Button><Button onClick={()=>void save()}>Save changes</Button></div></DialogFooter></DialogContent></Dialog><Confirm open={!!deleting} onOpenChange={v=>!v&&setDeleting(null)} title="Delete purchase order?" copy="Received orders cannot be deleted because they have already changed stock." onConfirm={()=>void remove()}/></Shell>}
+const blankSupplier = {
+  name: "",
+  contactName: "",
+  phone: "",
+  email: "",
+  address: "",
+  paymentTerms: "",
+};
+export function SuppliersPageContent() {
+  const business = useBusinessSettings();
+  const [rows, setRows] = useState<Supplier[]>([]);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier | null>(null);
+  const [deleting, setDeleting] = useState<Supplier | null>(null);
+  const [form, setForm] = useState(blankSupplier);
+  const load = () => suiteApi.suppliers().then(setRows);
+  useEffect(() => {
+    void load();
+  }, []);
+  function launch(row?: Supplier) {
+    setEditing(row ?? null);
+    setForm(
+      row
+        ? {
+            name: row.name,
+            contactName: row.contactName ?? "",
+            phone: row.phone ?? "",
+            email: row.email ?? "",
+            address: row.address ?? "",
+            paymentTerms: row.paymentTerms ?? "",
+          }
+        : blankSupplier,
+    );
+    setOpen(true);
+  }
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (editing) await suiteApi.updateSupplier(editing.id, form);
+    else await suiteApi.createSupplier(form);
+    await load();
+    setOpen(false);
+  }
+  async function remove() {
+    if (!deleting) return;
+    await suiteApi.removeSupplier(deleting.id);
+    await load();
+    setDeleting(null);
+  }
+  return (
+    <Shell
+      title="Suppliers"
+      subtitle="Contacts, terms, supplied products, balances, and purchase history."
+      action={
+        <Button onClick={() => launch()}>
+          <Plus />
+          Add supplier
+        </Button>
+      }
+    >
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((row) => (
+          <Card
+            key={row.id}
+            className="cursor-pointer transition hover:border-primary/40 hover:shadow-sm"
+            onClick={() => launch(row)}
+          >
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>{row.name}</CardTitle>
+                  <CardDescription>
+                    {row.contactName || "No contact person"}
+                  </CardDescription>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => launch(row)}>
+                      <Pencil />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onSelect={() => setDeleting(row)}
+                    >
+                      <Trash2 />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">Phone</span>
+                <span>{row.phone || "—"}</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">Terms</span>
+                <span>{row.paymentTerms || "—"}</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">Products</span>
+                <strong>{row.products.length}</strong>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">Purchase orders</span>
+                <strong>{row.purchases.length}</strong>
+              </p>
+              <p className="flex justify-between border-t pt-3">
+                <span>Outstanding</span>
+                <strong className="text-amber-700">
+                  {business.formatMoney(row.outstandingBalance)}
+                </strong>
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? editing.name : "Add supplier"}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? `${editing.purchases.length} purchase orders · ${editing.products.length} linked products`
+                : "Create a supplier for purchase orders and stock receipts."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={save}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Supplier name">
+                <Input
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Contact person">
+                <Input
+                  value={form.contactName}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, contactName: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Phone">
+                <Input
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, phone: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Email">
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, email: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Payment terms">
+                <Input
+                  value={form.paymentTerms}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, paymentTerms: e.target.value }))
+                  }
+                  placeholder="e.g. Net 30"
+                />
+              </Field>
+              <Field label="Address" className="sm:col-span-2">
+                <Input
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, address: e.target.value }))
+                  }
+                />
+              </Field>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button disabled={!form.name}>Save supplier</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Confirm
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title="Delete this supplier?"
+        copy="Suppliers with purchase history cannot be removed until those records are handled."
+        onConfirm={() => void remove()}
+      />
+    </Shell>
+  );
+}
 
-export function InvoicesPageContent(){const business=useBusinessSettings();const [rows,setRows]=useState<Invoice[]>([]);const [selected,setSelected]=useState<Invoice|null>(null);const [deleting,setDeleting]=useState<Invoice|null>(null);const [status,setStatus]=useState<Invoice["status"]>("UNPAID");const [paid,setPaid]=useState(0);const load=()=>suiteApi.invoices().then(setRows);useEffect(()=>{void load()},[]);function launch(r:Invoice){setSelected(r);setStatus(r.status);setPaid(r.amountPaid)}async function save(){if(!selected)return;await suiteApi.updateInvoice(selected.id,{status,amountPaid:paid});await load();setSelected(null)}async function remove(){if(!deleting)return;await suiteApi.removeInvoice(deleting.id);await load();setDeleting(null)}return <Shell title="Invoices" subtitle="Due dates, partial payments, outstanding balances, and customer billing." action={<Button asChild><Link href="/invoices/new"><Plus/>New invoice</Link></Button>}><Card><Table><TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Customer</TableHead><TableHead>Status</TableHead><TableHead className="hidden md:table-cell">Due</TableHead><TableHead className="text-right">Total</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader><TableBody>{rows.map(r=><TableRow key={r.id} className="cursor-pointer" onClick={()=>launch(r)}><TableCell className="font-mono font-semibold">{r.reference}</TableCell><TableCell>{r.customerName}</TableCell><TableCell><Badge variant="outline">{r.status.replaceAll("_"," ")}</Badge></TableCell><TableCell className="hidden md:table-cell">{new Date(r.dueAt).toLocaleDateString()}</TableCell><TableCell className="text-right">{business.formatMoney(r.total)}</TableCell><TableCell className="text-right">{business.formatMoney(r.total-r.amountPaid)}</TableCell></TableRow>)}</TableBody></Table></Card><Dialog open={!!selected} onOpenChange={v=>!v&&setSelected(null)}><DialogContent><DialogHeader><DialogTitle>{selected?.reference}</DialogTitle><DialogDescription>{selected?.customerName} · Due {selected&&new Date(selected.dueAt).toLocaleDateString()}</DialogDescription></DialogHeader><div className="rounded-xl bg-muted p-4">{selected?.items.map(i=><div key={i.description} className="flex justify-between text-sm"><span>{i.description} × {i.quantity}</span><strong>{business.formatMoney(i.total)}</strong></div>)}</div><div className="grid gap-4 sm:grid-cols-2"><Field label="Payment status"><Select value={status} onValueChange={v=>setStatus(v as Invoice["status"])}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="UNPAID">Unpaid</SelectItem><SelectItem value="PARTIALLY_PAID">Partially paid</SelectItem><SelectItem value="PAID">Paid</SelectItem></SelectContent></Select></Field>{status==="PARTIALLY_PAID"&&<Field label="Amount paid"><Input type="number" min="0" max={selected?.total} step="0.01" value={paid||""} onChange={e=>setPaid(+e.target.value)}/></Field>}</div><DialogFooter className="justify-between"><Button variant="destructive" onClick={()=>{setDeleting(selected);setSelected(null)}}><Trash2/>Delete</Button><div className="flex gap-2"><Button variant="outline" onClick={()=>setSelected(null)}>Cancel</Button><Button onClick={()=>void save()}>Save payment</Button></div></DialogFooter></DialogContent></Dialog><Confirm open={!!deleting} onOpenChange={v=>!v&&setDeleting(null)} title="Delete invoice?" copy="This permanently removes the invoice and its line items." onConfirm={()=>void remove()}/></Shell>}
-
-function Metric({label,value}:{label:string;value:string|number}){const seed=label.split("").reduce((s,c)=>s+c.charCodeAt(0),0);const bars=Array.from({length:12},(_,i)=>18+((seed*(i+3)+i*17)%76));return <Card className="group overflow-hidden transition duration-300 hover:-translate-y-0.5"><CardContent className="relative flex items-end justify-between gap-4 p-5"><div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">{label}</p><p className="mt-2 font-display text-2xl font-bold tracking-[-.04em]">{value}</p><p className="mt-1 text-[9px] text-[#198963]">Live business signal</p></div><div className="visual-bars opacity-70 transition group-hover:opacity-100">{bars.map((height,i)=><i key={i} style={{height:`${height}%`}}/>)}</div></CardContent></Card>}
+function Metric({ label, value }: { label: string; value: string | number }) {
+  const seed = label.split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+  const bars = Array.from(
+    { length: 12 },
+    (_, i) => 18 + ((seed * (i + 3) + i * 17) % 76),
+  );
+  return (
+    <Card className="group overflow-hidden transition duration-300 hover:-translate-y-0.5">
+      <CardContent className="relative flex items-end justify-between gap-4 p-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+            {label}
+          </p>
+          <p className="mt-2 font-display text-2xl font-bold tracking-[-.04em]">
+            {value}
+          </p>
+          <p className="mt-1 text-[9px] text-[#198963]">Live business signal</p>
+        </div>
+        <div className="visual-bars opacity-70 transition group-hover:opacity-100">
+          {bars.map((height, i) => (
+            <i key={i} style={{ height: `${height}%` }} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
